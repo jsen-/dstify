@@ -1,0 +1,17 @@
+[package]
+name = "dstify_derive"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "proc macro for dstify"
+repository = "https://github.com/jsen-/dstify/tree/master/dstify_derive"
+categories = ["data-structures", "memory-management", "rust-patterns", "no-std"]
+documentation = "https://docs.rs/dstify_derive"
+rust-version = "1.89"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { version = "1", default-features = false }
+syn = { version = "2", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }

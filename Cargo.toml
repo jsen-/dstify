@@ -1,0 +1,17 @@
+[package]
+name = "dstify"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "safe construction of custom dynamically-sized types (DSTs)"
+repository = "https://github.com/jsen-/dstify"
+categories = ["data-structures", "memory-management", "rust-patterns", "no-std"]
+documentation = "https://docs.rs/dstify"
+rust-version = "1.89"
+
+[dependencies]
+dstify_derive = "0.1.0"
+
+[features]
+default = ["std"]
+std = []
