@@ -1,21 +1,18 @@
 extern crate alloc;
 
-use super::{SmartPointer, sealed::Sealed};
-use alloc::{alloc::Layout, sync::Arc};
-use core::mem;
+use super::{DropGuard, Sealed, SmartPointer};
+use alloc::{alloc::Layout, boxed::Box, sync::Arc};
 
 impl<T: ?Sized> Sealed for alloc::sync::Arc<T> {}
 
 impl<T: ?Sized> SmartPointer<T> for Arc<T> {
-    type Guard = Arc<[mem::MaybeUninit<u8>]>;
+    type Guard = DropGuard;
 
-    fn alloc(layout: Layout) -> (*mut u8, Self::Guard) {
-        let arc = Arc::<[u8]>::new_uninit_slice(layout.size());
-        let base = Arc::as_ptr(&arc).cast_mut().cast();
-        (base, arc)
+    unsafe fn alloc(layout: Layout) -> (*mut u8, Self::Guard) {
+        unsafe { Box::<T>::alloc(layout) }
     }
 
     unsafe fn cast(base: *mut T) -> Self {
-        unsafe { Arc::from_raw(base) }
+        unsafe { Box::from_raw(base) }.into()
     }
 }

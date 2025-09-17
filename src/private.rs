@@ -23,7 +23,7 @@ where
 {
     let slice = unsized_field.as_slice();
     let (layout, offsets, last_offset) = calc_offsets(normal_fields, slice)?;
-    let (base, guard) = R::alloc(layout);
+    let (base, guard) = unsafe { R::alloc(layout) };
 
     let mut offsets = Offsets {
         base,
@@ -83,25 +83,16 @@ impl<const N: usize> Offsets<N> {
 }
 
 mod sealed {
-    use super::*;
     pub trait Sealed {}
-
-    impl<T> Sealed for [T] where T: Copy {}
-    impl Sealed for str {}
-    impl Sealed for CStr {}
-
-    #[cfg(feature = "std")]
-    impl Sealed for OsStr {}
-    #[cfg(feature = "std")]
-    impl Sealed for Path {}
 }
 
 pub trait AsSlice: sealed::Sealed {
-    type Item;
+    type Item: Copy;
     fn as_slice(&self) -> &[Self::Item];
 }
 
 // bitwise copy of the resulting slice is performed so `T` must be `Copy`
+impl<T> sealed::Sealed for [T] where T: Copy {}
 impl<T> AsSlice for [T]
 where
     T: Copy,
@@ -112,6 +103,7 @@ where
     }
 }
 
+impl sealed::Sealed for str {}
 impl AsSlice for str {
     type Item = u8;
     fn as_slice(&self) -> &[Self::Item] {
@@ -119,6 +111,7 @@ impl AsSlice for str {
     }
 }
 
+impl sealed::Sealed for CStr {}
 impl AsSlice for CStr {
     type Item = u8;
     fn as_slice(&self) -> &[Self::Item] {
@@ -127,6 +120,8 @@ impl AsSlice for CStr {
 }
 
 #[cfg(feature = "std")]
+impl sealed::Sealed for OsStr {}
+#[cfg(feature = "std")]
 impl AsSlice for OsStr {
     type Item = u8;
     fn as_slice(&self) -> &[Self::Item] {
@@ -134,6 +129,8 @@ impl AsSlice for OsStr {
     }
 }
 
+#[cfg(feature = "std")]
+impl sealed::Sealed for Path {}
 #[cfg(feature = "std")]
 impl AsSlice for Path {
     type Item = u8;

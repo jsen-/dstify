@@ -1,3 +1,5 @@
+mod common;
+
 use core::ffi::CStr;
 use dstify::Dstify;
 
@@ -90,13 +92,13 @@ fn test() {
     assert_eq!(size_of::<&U1>(), 16);
     assert_eq!(size_of::<&L1>(), 16);
 
-    N0::init_unsized::<Box<_>>(&[]);
-    N0::init_unsized::<Box<_>>(&[1]);
-    N0::init_unsized::<Box<_>>(&[1, 2]);
-    N0::init_unsized::<Box<_>>(&[1, 2, 3]);
+    make!(N0, &[]);
+    make!(N0, &[1]);
+    make!(N0, &[1, 2]);
+    make!(N0, &[1, 2, 3]);
 
-    let t1a = N1::init_unsized::<Box<_>>(0, &[]);
-    let t1b = N1::init_unsized::<Box<_>>(0, &[]);
+    let t1a = make!(N1, 0, &[]);
+    let t1b = make!(N1, 0, &[]);
     assert_eq!(t1a, t1b);
 
     let t1c = N1::init_unsized::<Box<_>>(1, &[1]);
@@ -112,29 +114,37 @@ fn test() {
         .is_err()
     );
 
-    N3::init_unsized::<Box<_>>(1, 2, 3, &[]);
-    N3::init_unsized::<Box<_>>(1, 2, 3, &[()]);
-    N3::init_unsized::<Box<_>>(1, 2, 3, &[(), ()]);
+    make!(N3, 1, 2, 3, &[]);
+    make!(N3, 1, 2, 3, &[()]);
+    make!(N3, 1, 2, 3, &[(), ()]);
 
-    N4::init_unsized::<Box<_>>((), (), (), (), &[]);
-    N4::init_unsized::<Box<_>>((), (), (), (), &[1]);
-    N4::init_unsized::<Box<_>>((), (), (), (), &[1, 2]);
+    make!(N4, (), (), (), (), &[]);
+    make!(N4, (), (), (), (), &[1]);
+    make!(N4, (), (), (), (), &[1, 2]);
 
-    N5::init_unsized::<Box<_>>("");
-    N5::init_unsized::<Box<_>>("Hello, World!");
+    make!(N5, "");
+    make!(N5, "Hello, World!");
 
-    N6::init_unsized::<Box<_>>(CStr::from_bytes_with_nul(b"\0").unwrap());
-    N6::init_unsized::<Box<_>>(CStr::from_bytes_with_nul(b"Hello, World!\0").unwrap());
+    make!(N6, CStr::from_bytes_with_nul(b"\0").unwrap());
+    make!(N6, CStr::from_bytes_with_nul(b"Hello, World!\0").unwrap());
 
-    U0::init_unsized::<Box<_>>(&[1]);
-    U1::init_unsized::<Box<_>>(1, &[1]);
+    make!(U0, &[1]);
+    make!(U1, 1, &[1]);
 
-    Z0::init_unsized::<Box<_>>(&[]);
-    Z1::init_unsized::<Box<_>>((), &[]);
-    Z2::init_unsized::<Box<_>>((), (), &[]);
+    make!(Z0, &[]);
+    make!(Z0, &[()]);
+    make!(Z0, &[(), ()]);
 
-    L1::init_unsized::<Box<_>>(&1, &[]);
-    L1::init_unsized::<Box<_>>(&1, &[1]);
-    L1::init_unsized::<Box<_>>(&1, &[1, 2]);
-    L1::init_unsized::<Box<_>>(&1, &[1, 2]);
+    make!(Z1, (), &[]);
+    make!(Z1, (), &[()]);
+    make!(Z1, (), &[(), ()]);
+
+    make!(Z2, (), (), &[]);
+    make!(Z2, (), (), &[()]);
+    make!(Z2, (), (), &[(), ()]);
+
+    make!(L1, &1, &[]);
+    make!(L1, &1, &[1]);
+    make!(L1, &1, &[1, 2]);
+    make!(L1, &1, &[1, 2]);
 }
