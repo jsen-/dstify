@@ -1,6 +1,6 @@
 [package]
 name = "dstify"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "safe construction of custom dynamically-sized types (DSTs)"
@@ -10,7 +10,7 @@ documentation = "https://docs.rs/dstify"
 rust-version = "1.89"
 
 [dependencies]
-dstify_derive = "0.1.0"
+dstify_derive = "0.2.0"
 
 [features]
 default = ["std"]

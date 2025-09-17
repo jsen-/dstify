@@ -62,34 +62,70 @@ fn inner(input: DeriveInput) -> Result<TokenStream, TokenStream> {
         })
         .collect::<Vec<TokenStream>>();
 
-    let res = parse_quote! {
-        impl #impl_generics #name #ty_generics #where_clause {
-            fn init_unsized<R>(#(#args,)* #dst_field_name: &#dst_field_ty) -> R
-            where
-                R: ::dstify::SmartPointer<Self>
-            {
-                unsafe {
-                    let fat_ptr = ::core::result::Result::unwrap(::dstify::private::alloc::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
-                        #(#inits;)*
-                    }));
-                    // this cast must remain here, cannot be done using generics
-                    R::cast(fat_ptr as *mut Self)
+    let res = match dst_field_ty {
+        Type::TraitObject(trait_object) => {
+            let bounds = &trait_object.bounds;
+            parse_quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    fn init_unsized<R, D>(#(#args,)* #dst_field_name: D) -> R
+                    where
+                        R: ::dstify::SmartPointer<Self>,
+                        D: #bounds,
+                    {
+                        unsafe {
+                            let fat_ptr = ::core::result::Result::unwrap(::dstify::private::alloc_dyn::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
+                                #(#inits;)*
+                            }));
+                            R::cast(fat_ptr as *mut D as *mut (dyn #bounds) as *mut Self)
+                        }
+                    }
+                    fn init_unsized_checked<R, D>(#(#args,)* #dst_field_name: D) -> ::core::result::Result<R, ::core::alloc::LayoutError>
+                    where
+                        R: ::dstify::SmartPointer<Self>,
+                        D: #bounds,
+                    {
+                        unsafe {
+                            let fat_ptr = ::dstify::private::alloc_dyn::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
+                                #(#inits;)*
+                            })?;
+                            Ok(R::cast(fat_ptr as *mut D as *mut (dyn #bounds) as *mut Self))
+                        }
+                    }
                 }
             }
-            fn init_unsized_checked<R>(#(#args,)* #dst_field_name: &#dst_field_ty) -> ::core::result::Result<R, ::core::alloc::LayoutError>
-            where
-                R: ::dstify::SmartPointer<Self>
-            {
-                unsafe {
-                    let fat_ptr = ::dstify::private::alloc::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
-                        #(#inits;)*
-                    })?;
-                    // this cast must remain here, cannot be done using generics
-                    Ok(R::cast(fat_ptr as *mut Self))
+        }
+        _ => {
+            parse_quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    fn init_unsized<R>(#(#args,)* #dst_field_name: &#dst_field_ty) -> R
+                    where
+                        R: ::dstify::SmartPointer<Self>
+                    {
+                        unsafe {
+                            let fat_ptr = ::core::result::Result::unwrap(::dstify::private::alloc_slice::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
+                                #(#inits;)*
+                            }));
+                            // this cast must remain here, cannot be done using generics
+                            R::cast(fat_ptr as *mut Self)
+                        }
+                    }
+                    fn init_unsized_checked<R>(#(#args,)* #dst_field_name: &#dst_field_ty) -> ::core::result::Result<R, ::core::alloc::LayoutError>
+                    where
+                        R: ::dstify::SmartPointer<Self>
+                    {
+                        unsafe {
+                            let fat_ptr = ::dstify::private::alloc_slice::<Self, R, _, _, _>([#(#layouts),*], #dst_field_name, |offsets| {
+                                #(#inits;)*
+                            })?;
+                            // this cast must remain here, cannot be done using generics
+                            Ok(R::cast(fat_ptr as *mut Self))
+                        }
+                    }
                 }
             }
         }
     };
+
     Ok(res)
 }
 

@@ -1,5 +1,3 @@
-extern crate alloc;
-
 mod arc;
 mod boxed;
 mod rc;

@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use crate::SmartPointer;
 use core::{
     alloc::{Layout, LayoutError},
@@ -10,7 +8,7 @@ use core::{
 #[cfg(feature = "std")]
 use std::{ffi::OsStr, path::Path};
 
-pub unsafe fn alloc<T, R, D, F, const N: usize>(
+pub unsafe fn alloc_slice<T, R, D, F, const N: usize>(
     normal_fields: [core::alloc::Layout; N],
     unsized_field: &D,
     init_normal_fields: F,
@@ -22,7 +20,8 @@ where
     F: FnOnce(&mut Offsets<N>),
 {
     let slice = unsized_field.as_slice();
-    let (layout, offsets, last_offset) = calc_offsets(normal_fields, slice)?;
+    let (layout, offsets, last_offset) =
+        calc_offsets(normal_fields, Layout::array::<D::Item>(slice.len())?)?;
     let (base, guard) = unsafe { R::alloc(layout) };
 
     let mut offsets = Offsets {
@@ -42,10 +41,35 @@ where
     Ok(::core::ptr::slice_from_raw_parts_mut(base, slice.len()))
 }
 
+pub unsafe fn alloc_dyn<T, R, D, F, const N: usize>(
+    normal_fields: [core::alloc::Layout; N],
+    unsized_field: D,
+    init_normal_fields: F,
+) -> Result<*const u8, core::alloc::LayoutError>
+where
+    T: ?Sized,
+    R: SmartPointer<T>,
+    F: FnOnce(&mut Offsets<N>),
+{
+    let (layout, offsets, last_offset) = calc_offsets(normal_fields, Layout::new::<D>())?;
+    let (base, guard) = unsafe { R::alloc(layout) };
+
+    let mut offsets = Offsets {
+        base,
+        offsets,
+        curr: 0,
+    };
+    init_normal_fields(&mut offsets);
+    unsafe { ptr::write(base.add(last_offset).cast(), unsized_field) };
+
+    mem::forget(guard);
+    Ok(base)
+}
+
 #[inline]
-fn calc_offsets<const N: usize, T>(
+fn calc_offsets<const N: usize>(
     normal_fields: [Layout; N],
-    slice: &[T],
+    dyn_field_layout: Layout,
 ) -> Result<(Layout, [usize; N], usize), LayoutError> {
     let mut offsets: [usize; N] = [0; N];
     let (layout, last_offset) = if N != 0 {
@@ -55,9 +79,9 @@ fn calc_offsets<const N: usize, T>(
             layout = new_layout;
             offsets[i] = offset;
         }
-        layout.extend(Layout::array::<T>(slice.len())?)?
+        layout.extend(dyn_field_layout)?
     } else {
-        (Layout::array::<T>(slice.len())?, 0)
+        (dyn_field_layout, 0)
     };
     Ok((layout.pad_to_align(), offsets, last_offset))
 }

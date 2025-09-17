@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use super::{DropGuard, Sealed, SmartPointer};
 use alloc::{alloc::Layout, boxed::Box, sync::Arc};
 
