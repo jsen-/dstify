@@ -2,7 +2,7 @@
 
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Data, DeriveInput, Fields, FieldsNamed, FieldsUnnamed, Ident, Type,
+    Attribute, Data, DeriveInput, Fields, FieldsNamed, FieldsUnnamed, Ident, Type, TypeParamBound,
     parse_macro_input, parse_quote, spanned::Spanned,
 };
 
@@ -64,7 +64,13 @@ fn inner(input: DeriveInput) -> Result<TokenStream, TokenStream> {
 
     let res = match dst_field_ty {
         Type::TraitObject(trait_object) => {
-            let bounds = &trait_object.bounds;
+            let mut bounds = trait_object.bounds.clone();
+            if !bounds
+                .iter()
+                .any(|b| matches!(b, TypeParamBound::Lifetime(_)))
+            {
+                bounds.push(TypeParamBound::Lifetime(parse_quote!('static)));
+            }
             parse_quote! {
                 impl #impl_generics #name #ty_generics #where_clause {
                     fn init_unsized<R, D>(#(#args,)* #dst_field_name: D) -> R
