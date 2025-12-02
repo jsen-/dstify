@@ -10,7 +10,7 @@ documentation = "https://docs.rs/dstify"
 rust-version = "1.89"
 
 [dependencies]
-dstify_derive = "0.2.0"
+dstify_derive = { path = "dstify_derive" }
 
 [features]
 default = ["std"]
