@@ -1,17 +1,6 @@
-[package]
-name = "dstify"
-version = "0.2.1"
-edition = "2024"
-license = "MIT OR Apache-2.0"
-description = "safe construction of custom dynamically-sized types (DSTs)"
-repository = "https://github.com/jsen-/dstify"
-categories = ["data-structures", "memory-management", "rust-patterns", "no-std"]
-documentation = "https://docs.rs/dstify"
-rust-version = "1.89"
-
-[dependencies]
-dstify_derive = "0.2.1"
-
-[features]
-default = ["std"]
-std = []
+[workspace]
+members = [
+    "dstify",
+    "dstify_derive",
+]
+resolver = "2"
